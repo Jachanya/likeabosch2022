@@ -19,3 +19,5 @@ x_2 = x_1 + rotated_velocity_using_angle * change_time
 
 angle = initial_angle + degree(angular_velocity) * change_time
 Then, I animated the motion of the vehicle. Also made label for the track number.
+
+The indicator is triggered if an object is in the blind spot, Red is the trigger color and It is displayed on the ref car.
