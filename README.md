@@ -1,4 +1,5 @@
-Note: To run this program simply place the files without the videos in a folder named dataset
+Note: To run this program simply place the datasets without the videos in a folder named "dataset".
+
 # likeabosch2022
 Bosch: Software Development Challenge.
 Challenge topic: Object tracking and blind spot detection
