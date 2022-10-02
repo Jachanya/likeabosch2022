@@ -21,3 +21,5 @@ angle = initial_angle + degree(angular_velocity) * change_time
 Then, I animated the motion of the vehicle. Also made label for the track number.
 
 The indicator is triggered if an object is in the blind spot, Red is the trigger color and It is displayed on the ref car.
+
+Lastly Keeping track: I used the kalman filter to keep track of objects that filker frame to frame to avoid not dictecting blind spot. I saved discarded tracker into a keep track dictionary, where the value is the number of times it has been discarded. I increament it every iteration and when it reaches its grace period, I discard it. The keep track obj are positioned using only the kalman filter.
