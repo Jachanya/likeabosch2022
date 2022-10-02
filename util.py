@@ -31,5 +31,4 @@ class TempDetected():
     self.id = id
 
 def distance(x,y,x1,y1):
-  return np.sqrt(np.square(y-x) + np.square(y1-x1))
-  
+  return np.sqrt(np.square(y-x) + np.square(y1-x1) + 1e-6)

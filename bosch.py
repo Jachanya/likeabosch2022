@@ -8,6 +8,15 @@ from matplotlib.patches import Rectangle
 from matplotlib.animation import FuncAnimation
 from scipy.optimize import linear_sum_assignment
 import uuid
+from model import *
+from dataclasses import dataclass
+
+@dataclass
+class Tracker:
+  id: int
+  centroid: tuple
+  kalman: KalmanFilter()
+  consecutive_invi_num = 0
 
 #Extracting car information from four files
 """
@@ -88,7 +97,11 @@ for sense_data in all_sensor_data:
     camera_data = []
     num_camera_dect = 15
     for item in range(num_camera_dect):
-        obj_cam_data = sense_data[['t', f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_camData._m_objects._m_value._{item}_._m_dx',f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_camData._m_objects._m_value._{item}_._m_dy']].to_numpy()
+        obj_cam_data = sense_data[['t', f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_camData._m_objects._m_value._{item}_._m_dx',
+        f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_camData._m_objects._m_value._{item}_._m_dy',
+        f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_camData._m_objects._m_value._{item}_._m_vx',
+        f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_camData._m_objects._m_value._{item}_._m_vy'
+        ]].to_numpy()
         camera_data.append(obj_cam_data)
     all_camera_data.append(camera_data)
 
@@ -101,7 +114,10 @@ for sense_data in all_sensor_data:
         radar_data[f"radar_sensor_{item}"] = []
         num_radar_dect = 10
         for item_dect in range(num_radar_dect):
-            obj_cam_data = sense_data[['t', f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_cornerData._m_value._{item}_._m_objects._m_value._{item_dect}_._m_dx',f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_cornerData._m_value._{item}_._m_objects._m_value._{item_dect}_._m_dy']].to_numpy()
+            obj_cam_data = sense_data[['t', f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_cornerData._m_value._{item}_._m_objects._m_value._{item_dect}_._m_dx',
+            f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_cornerData._m_value._{item}_._m_objects._m_value._{item_dect}_._m_dy',
+            f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_cornerData._m_value._{item}_._m_objects._m_value._{item_dect}_._m_vx',
+            f'_g_Infrastructure_CCR_NET_NetRunnablesClass_m_rteInputData_out_local.TChangeableMemPool._._._m_arrayPool._0_._elem._m_cornerData._m_value._{item}_._m_objects._m_value._{item_dect}_._m_vy']].to_numpy()
             radar_data[f"radar_sensor_{item}"].append(obj_cam_data)
     all_radar_data.append(radar_data)
 
@@ -114,41 +130,16 @@ for dir in train_dataset_dir:
     all_obj_1.append(obj_1)
     all_obj_2.append(obj_2)
 
-num_frames = 3000
+num_frames = 1000
 prev_obj = []
 curr_obj = []
 
-# for i in range(num_frames):
-#     for j in range(3):
-#         for index in range(num_camera_dect):
-#             cam_x = (all_camera_data[j][index][i*2][1]/128.0) - car_positionX[j][i]
-#             cam_y = (all_camera_data[j][index][i*2][2]/128.0) - car_positionY[j][i]
-#             curr_obj.append([cam_x, cam_y, str(uuid.uuid4())[:5]])
+tracking_obj = {}
 
-#     for _, value in all_radar_data[j].items():
-#         for index in range(num_radar_dect):
-#             cam_x = car_positionX[j][i] - (value[index][i*2][1]/128.0)
-#             cam_y = car_positionY[j][i] - (value[index][i*2][2]/128.0)
-#             curr_obj.append([cam_x, cam_y, str(uuid.uuid4())[:5]])
-    
-#     if(len(prev_obj) <= 0):
-#         prev_obj = curr_obj
-#         curr_obj = []
-    
-#     else:
-#         score_matrix = np.zeros((len(curr_obj), len(prev_obj)))
-#         for t in range(len(curr_obj)):
-#             for x in range(len(prev_obj)):
-#                 score_matrix[t, x] = distance(curr_obj[t][0],curr_obj[t][1],prev_obj[t][0],prev_obj[t][1])
-        
-#         row_ind, col_ind = linear_sum_assignment(score_matrix)
-
-#         for r, c in zip(row_ind, col_ind):
-#             curr_obj[r][2] = prev_obj[c][2]
-
-#         prev_obj = curr_obj
-#         curr_obj = []
-
+#Performing kalman filter
+x = np.matrix('0. 0. 0. 0.').T 
+P = np.matrix(np.eye(4))*1000 # initial uncertainty
+R = 0.01**2
 
 #Visualize moving car
 fig, ax = plt.subplots(nrows=3, ncols=1, figsize= (14,14))
@@ -159,7 +150,8 @@ def generate_animation(i):
     for j in range(3):
         ax[j].clear()
         global curr_obj, prev_obj, car_positionX, car_positionY, car_angle, camera_data, all_camera_data, all_obj_2, all_obj_1, all_radar_data
-            
+        global x, P, R
+
         ax[j].add_patch(Rectangle((car_positionX[j][i], car_positionY[j][i]), size, size, color='r'))
         ax[j].text(car_positionX[j][i], car_positionY[j][i], f"reference car")
 
@@ -181,6 +173,7 @@ def generate_animation(i):
             for index in range(num_radar_dect):
                 cam_x = car_positionX[j][i] - (value[index][i*2][1]/128.0)
                 cam_y = car_positionY[j][i] - (value[index][i*2][2]/128.0)
+
                 curr_obj.append([cam_x, cam_y, str(uuid.uuid4())[:5]])
         
         if(len(prev_obj) <= 0):
@@ -204,20 +197,21 @@ def generate_animation(i):
         for index in range(len(prev_obj)):
             cam_x = prev_obj[index][0]
             cam_y = prev_obj[index][1]
+            #Indicator
+            close_x = (cam_x - car_positionX[j][i] + 0.25)**2
+            close_y = (cam_y - car_positionY[j][i] + 2)**2
+            if(close_x < 0.1 and close_y < 0.02):
+                ax[j].scatter([car_positionX[j][i]], [car_positionY[j][i]], color='r', s=200)
+            # #kalman estimation
+            # result = []
+            # x, P = kalman_xy(x, P, (cam_x, cam_y), R)
+            # result.append((x[:2]).tolist())
+            # kal_x, kal_y = zip(*result)
+
+            #ax[j].scatter(kal_x, kal_y)
             ax[j].add_patch(Rectangle((cam_x, cam_y), size, size))
             ax[j].text(cam_x, cam_y, prev_obj[index][2])
 
-
-        # for index in range(num_camera_dect):
-        #     cam_x = (all_camera_data[j][index][i*2][1]/128.0) - car_positionX[j][i]
-        #     cam_y = (all_camera_data[j][index][i*2][2]/128.0) - car_positionY[j][i]
-        #     ax[j].add_patch(Rectangle((cam_x, cam_y), size, size))
-                
-        # for _, value in all_radar_data[j].items():
-        #     for index in range(num_radar_dect):
-        #         cam_x = car_positionX[j][i] - (value[index][i*2][1]/128.0)
-        #         cam_y = car_positionY[j][i] - (value[index][i*2][2]/128.0)
-        #         ax[j].add_patch(Rectangle((cam_x, cam_y), size, size))
 
         ax[j].set_xlim(car_positionX[j][i]-25, car_positionX[j][i]+25)
         ax[j].set_ylim(car_positionY[j][i]-25, car_positionY[j][i]+25)
